@@ -124,6 +124,9 @@ void setup()
     return;
   }
 
+  Serial.print("ESP Board MAC Address:  ");
+  Serial.println(WiFi.macAddress());
+
   esp_now_register_recv_cb(OnDataRecv);
 }
  
