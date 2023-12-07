@@ -15,7 +15,7 @@ unsigned long lastRecvTime = 0;
 #define TXD2 17
 TinyGPSPlus gps;
 
-Servo FLESC; //name the servo object, here ESC
+Servo FLESC; //name the servo object, here ESC 
 Servo FRESC;
 Servo RLESC;
 Servo RRESC;
