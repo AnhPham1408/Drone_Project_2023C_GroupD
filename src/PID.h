@@ -1,9 +1,12 @@
-#include "wifi_websocket.h"
-#include "imu.h"
-#include <WiFi.h>
-#include <ServoESP32.h> //Use the Servo librarey for generating PWM
+#include <Arduino.h>      // Arduino library
+#include <ESP32Servo.h> //Use the Servo librarey for generating PWM
+#include "PID_v1.h"        // Library to configure the PID
+//#include "Receiver.h"
 
-Servo FLESC; //name the servo object, here ESC
+// ================================================================
+// Variable declaration
+
+Servo FLESC; //name the servo object, here ESC 
 Servo FRESC;
 Servo RLESC;
 Servo RRESC;
@@ -13,202 +16,101 @@ const int frEscPin = 26;
 const int rlEscPin = 32;
 const int rrEscPin = 33;
 
-// current yaw pitch roll values in degrees
-float* curr_ypr;
-// current rotational rate in degrees/second
-float gyro_pitch, gyro_roll, gyro_yaw;
-
-int controller_active;
-
-// Reference values received from the server
-int* ref_array; //array that will hold four joystick outputs. throttle, yaw, pitch, roll.
-float ref_throttle,
-      ref_yaw,
-      ref_pitch,
-      ref_roll;
+extern double   ref_throttle,
+                ref_yaw,
+                ref_pitch,
+                ref_roll; //Reference control value
+            
+int fl,fr,rl,rr;
 
 //PID constants
 //kp_roll = 1.9, kd_roll = 15, ki_roll = 0.015
-const float kp_roll = 0.2,
-            kd_roll = 6,
-            ki_roll = 0;
+double  kp_roll = 0.6,
+        kd_roll = 0.01,
+        ki_roll = 3.5,
+        kp_roll_an = 0.5,
+        kd_roll_an = 0,
+        ki_roll_an = 0;
+        
+double  kp_pitch = 0.6,
+        kd_pitch = 0.01,
+        ki_pitch = 3.5,
+        kp_pitch_an = 0.5,
+        kd_pitch_an = 0,
+        ki_pitch_an = 0;
 
-const float kp_pitch = 0.2,
-            kd_pitch = 6,
-            ki_pitch = 0;
+double  kp_yaw = 2,
+        kd_yaw = 0,
+        ki_yaw = 12,
+        kp_yaw_an = 1,
+        kd_yaw_an = 0,
+        ki_yaw_an = 0;
 
-const float kp_yaw = 3,
-            kd_yaw = 0,
-            ki_yaw = 0.02;
+double ang_roll = 0,  ang_pitch = 0, ang_yaw = 0; // PID output outter loop
+double u_roll = 0, u_pitch = 0, u_yaw = 0;; // PID output inner loop
 
-// derivative and integral errors
-float prev_err_roll = 0,
-      eint_roll = 0;
+PID PID_ax(&anglex, &ang_roll, &ref_roll, kp_roll_an, ki_roll_an, kd_roll_an, DIRECT);
+PID PID_gx(&gyrox, &u_roll, &ang_roll, kp_roll, ki_roll, kd_roll, DIRECT);
+PID PID_ay(&angley, &ang_pitch, &ref_pitch, kp_pitch_an, ki_pitch_an, kd_pitch_an, DIRECT);
+PID PID_gy(&gyroy, &u_pitch, &ang_pitch, kp_pitch, ki_pitch, kd_pitch, DIRECT);
+PID PID_az(&anglez, &ang_yaw, &ref_yaw, kp_yaw_an, ki_yaw_an, kd_yaw_an, DIRECT);
+PID PID_gz(&gyroz, &u_yaw, &ang_yaw, kp_yaw, ki_yaw, kd_yaw, DIRECT);
 
-float prev_err_pitch = 0,
-      eint_pitch = 0;
+void Init_PID(){
+    FLESC.attach(flEscPin); //Generate PWM 
+    FRESC.attach(frEscPin);
+    RLESC.attach(rlEscPin);
+    RRESC.attach(rrEscPin);
+    PID_ax.SetMode(AUTOMATIC);
+    PID_ax.SetOutputLimits(-127, 127);
+    PID_ax.SetSampleTime(10);
+    PID_gx.SetMode(AUTOMATIC);
+    PID_gx.SetOutputLimits(-127, 127);
+    PID_gx.SetSampleTime(10);
+    PID_ay.SetMode(AUTOMATIC);
+    PID_ay.SetOutputLimits(-127, 127);
+    PID_ay.SetSampleTime(10);
+    PID_gy.SetMode(AUTOMATIC);
+    PID_gy.SetOutputLimits(-127, 127);
+    PID_gy.SetSampleTime(10);
+    PID_gz.SetMode(AUTOMATIC);
+    PID_gz.SetOutputLimits(-127, 127);
+    PID_gz.SetSampleTime(10);
+}
+void Compute_PID(){
+    //Roll Calculation
+    PID_ax.SetTunings(kp_roll_an, ki_roll_an, kd_roll_an);
+    PID_ax.Compute();
+    PID_gx.SetTunings(kp_roll, ki_roll, kd_roll);
+    PID_gx.Compute();
+    //Pitch Calculation
+    PID_ay.SetTunings(kp_pitch_an, ki_pitch_an, kd_pitch_an);
+    PID_ay.Compute();
+    PID_gy.SetTunings(kp_pitch, ki_pitch, kd_pitch);
+    PID_gy.Compute();
+    // Yaw calculation
+    PID_gz.SetTunings(kp_yaw_an, ki_yaw_an, kd_yaw_an);
+    PID_gz.Compute();
+    PID_gz.SetTunings(kp_yaw, ki_yaw, kd_yaw);
+    PID_gz.Compute();
+}
 
-float prev_err_yaw = 0,
-      eint_yaw = 0;
-
-void updateMotor() {
-  if (controller_active) {
-    float u_throttle = ref_throttle;
-
-    // do calculation **ROLL**
-    float err_roll = 0;
-    float edot_roll = 0;
-    float u_roll = 0;
-    //float curr_roll = curr_ypr[2] * -180 / M_PI;
-    
-    err_roll = ref_roll - gyro_roll;
-    edot_roll = err_roll - prev_err_roll;
-    eint_roll = eint_roll + err_roll;
-
-    u_roll = (kp_roll * err_roll) + (kd_roll * edot_roll) + (ki_roll * eint_roll);
-
-
-
-    // do calculation **PITCH**
-    float err_pitch = 0;
-    float edot_pitch = 0;
-    float u_pitch = 0;
-    //float curr_pitch = curr_ypr[1] * 180 / M_PI;
-
-    err_pitch = ref_pitch - gyro_pitch;
-    edot_pitch = err_pitch - prev_err_pitch;
-    eint_pitch = eint_pitch + err_pitch;
-
-    u_pitch = (kp_pitch * err_pitch) + (kd_pitch * edot_pitch) + (ki_pitch * eint_pitch);
-
-
-
-    // do calculation **YAW**
-    float err_yaw= 0;
-    float edot_yaw = 0;
-    float u_yaw = 0;
-    //float curr_yaw = curr_ypr[0] * 180 / M_PI;
-
-    err_yaw = ref_yaw - gyro_yaw;
-    edot_yaw = err_yaw - prev_err_yaw;
-    eint_yaw = eint_yaw + err_yaw;
-
-    u_yaw = (kp_yaw * err_yaw) + (kd_yaw * edot_yaw) + (ki_yaw * eint_yaw);
-
-
-    
-
-    int fl = u_throttle + u_roll + u_pitch - u_yaw;
-    int fr = u_throttle - u_roll + u_pitch + u_yaw;
-    int rl = u_throttle + u_roll - u_pitch + u_yaw;
-    int rr = u_throttle - u_roll - u_pitch - u_yaw;
-
-    // if motor output gets too high reset the integral error to 0.
-    // This is to prevent the integral term from getting too high.
-    if ((fl > 1600) || (fr > 1600) || (rl > 1600) || (rr > 1600)) {
-      eint_roll = 0;
-      eint_pitch = 0;
-      eint_yaw = 0;
-    }
-
-    //Serial.print("Gyro_yaw: "); Serial.print(gyro_yaw);
-    //Serial.print(" target_yaw: "); Serial.println(ref_yaw);
-    //Serial.print(" error: "); Serial.println(err_pitch);
-
-    Serial.print("fl: "); Serial.print(fl);
-    Serial.print(" fr: "); Serial.print(fr);
-    Serial.print(" rl: "); Serial.print(rl);
-    Serial.print(" rr: "); Serial.println(rr);
-    /*
-      // update new output signal
-      int fl = u_throttle + u_yaw + u_pitch - u_roll;
-      int fr = u_throttle - u_yaw + u_pitch + u_roll;
-      int rl = u_throttle - u_yaw - u_pitch - u_roll;
-      int rr = u_throttle + u_yaw - u_pitch + u_roll;
-    */
-
+void updateMotor(){
+    double u_throttle = ref_throttle;
+    Compute_PID();
+    fl = u_throttle + u_roll + u_pitch - u_yaw;
+    fr = u_throttle - u_roll + u_pitch + u_yaw;
+    rl = u_throttle + u_roll - u_pitch + u_yaw;
+    rr = u_throttle - u_roll - u_pitch - u_yaw;
     //write
     FLESC.writeMicroseconds(fl);
     FRESC.writeMicroseconds(fr);
     RLESC.writeMicroseconds(rl);
     RRESC.writeMicroseconds(rr);
-
-    // current error becomes the previous error for next cycle
-    prev_err_roll = err_roll;
-    prev_err_pitch = err_pitch;
-    prev_err_yaw = err_yaw;
-  
-  }
-  else {
-    Serial.println("Disamred. Shutting off motors..");
-    FLESC.writeMicroseconds(0);
-    FRESC.writeMicroseconds(0);
-    RLESC.writeMicroseconds(0);
-    RRESC.writeMicroseconds(0);
-    eint_roll = 0;
-    eint_pitch = 0;
-    eint_yaw = 0;
-  }
-
 }
-
-void readJoystick() {
-  ref_array = getControlReference();
-
-  ref_throttle = map(ref_array[0], 0, 200, 950, 1500);
-  ref_yaw = -1* map(ref_array[1], -100, 100, -10, 10);
-  ref_pitch = -1 * map(ref_array[2], -100, 100, -10, 10);
-  ref_roll = map(ref_array[3], -100, 100, -10, 10);
-  controller_active = ref_array[4];
-}
-
-
-void setup() {
-  Serial.begin(115200);
-  connectWifi();
-  connectWebsocket();
-  initIMU();
-  FLESC.attach(flEscPin); //Generate PWM in pin 9 of Arduino
-  FRESC.attach(frEscPin);
-  RLESC.attach(rlEscPin);
-  RRESC.attach(rrEscPin);
-}
-
-
-void loop() {
-  // reset reference value to 0 at the start of every loop. This is to prevent
-  // motors from spinning when it loses connection with the server.
-  ref_throttle = 0;
-  ref_yaw = 0;
-  ref_pitch = 0;
-  ref_roll = 0;
-  controller_active = false;
-  if (WiFi.status() == WL_CONNECTED) {
-    if (pollWebsocket()) {
-      curr_ypr = getYPR();
-      getRotation(&gyro_pitch, &gyro_roll, &gyro_yaw);
-      readJoystick();
-
-      /*
-                    Serial.print("throttle: "); Serial.print(ref_throttle);
-                    Serial.print(" yaw: "); Serial.print(ref_yaw);
-                    Serial.print(" pitch: "); Serial.print(ref_pitch);
-                    Serial.print(" roll: "); Serial.print(ref_roll);
-      */
-      /*
-        //write
-        FLESC.writeMicroseconds(ref_throttle);
-        FRESC.writeMicroseconds(ref_throttle);
-        RLESC.writeMicroseconds(ref_throttle);
-        RRESC.writeMicroseconds(ref_throttle);*/
-    }
-    else {
-      connectWebsocket();
-    }
-  }
-  else {
-    connectWifi();
-    connectWebsocket();
-  }
-  updateMotor();
-}
+/*
+fr = - - -
+rr = - + +
+rl = + + -
+fl = + - +
+*/
