@@ -107,6 +107,19 @@ void updateMotor(){
     FRESC.writeMicroseconds(fr);
     RLESC.writeMicroseconds(rl);
     RRESC.writeMicroseconds(rr);
+    if ((fl >= 2000) || (fr >= 2000) || (rl >= 2000) || (rr >= 2000)) {
+      fl = 2000;
+      fr = 2000;
+      rl = 2000;
+      rr = 2000;
+    }
+
+    if ((fl <= 1000) || (fr <= 1000) || (rl <= 1000) || (rr <= 1000)) {
+      fl = 1000;
+      fr = 1000;
+      rl = 1000;
+      rr = 1000;
+    }
 }
 /*
 fr = - - -
