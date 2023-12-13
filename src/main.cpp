@@ -9,7 +9,7 @@
 // ================================================================
 // Variable declaration
 unsigned long time_prev = 0;
-#define SIGNAL_TIMEOUT 1000  // This is signal timeout in milli seconds. We will reset the data if no signal
+#define SIGNAL_TIMEOUT 250  // This is signal timeout in milli seconds. We will reset the data if no signal
 int controller_active;
 // ================================================================
 // These function are kept in the main.cpp because it is easier to modify
@@ -51,7 +51,7 @@ void loop(){
 // Function Definition
 void SerialDataPrint()
 {
-  if (micros() - time_prev >= 50000)
+  if (millis() - time_prev >= SIGNAL_TIMEOUT)
   {
     time_prev = micros(); 
     Serial.print(anglex);
