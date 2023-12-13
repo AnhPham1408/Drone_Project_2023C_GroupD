@@ -27,21 +27,23 @@ struct PacketData{
 PacketData receiverData;
 
 struct GPSData{
-  uint16_t LatitudeValue;
-  uint16_t LongtitudeValue;
-  uint16_t AltitudeValue;
-  byte HourValue;
-  byte MinuteValue;
-  byte SecondValue;
-  byte sign;
-  uint16_t ax;
-  uint16_t ay;
-  uint16_t az;
-  uint16_t thrust;
-  uint16_t flm;
-  uint16_t frm;
-  uint16_t rlm;
-  uint16_t rrm;
+  float LatitudeValue;
+  float LongtitudeValue;
+  float AltitudeValue;
+  int HourValue;
+  int MinuteValue;
+  int SecondValue;
+  float gx;
+  float gy;
+  float gz;
+  float ax;
+  float ay;
+  float az;
+  int thrust;
+  int flm;
+  int frm;
+  int rlm;
+  int rrm;
 };
 GPSData gpsData;
 
@@ -134,56 +136,12 @@ void SendData(){
   gpsData.HourValue = hour;
   gpsData.MinuteValue = minute;
   gpsData.SecondValue = second;
-
-  if (anglex < 0 && angley < 0 && anglez < 0){
-    gpsData.sign = 0;
-    gpsData.ax = floor(anglex*-100);
-    gpsData.ay = floor(angley*-100);
-    gpsData.az = floor(anglez*-100);
-  }
-  else if (anglex > 0 && angley < 0 && anglez < 0){ 
-    gpsData.sign = 1;
-    gpsData.ax = floor(anglex*100);
-    gpsData.ay = floor(angley*-100);
-    gpsData.az = floor(anglez*-100);
-  }
-  else if (anglex < 0 && angley > 0 && anglez < 0){ 
-    gpsData.sign = 2;
-    gpsData.ax = floor(anglex*-100);
-    gpsData.ay = floor(angley*100);
-    gpsData.az = floor(anglez*-100);
-  }
-  else if (anglex < 0 && angley < 0 && anglez > 0){ 
-    gpsData.sign = 3;
-    gpsData.ax = floor(anglex*-100);
-    gpsData.ay = floor(angley*-100);
-    gpsData.az = floor(anglez*100);
-  }
-  else if (anglex > 0 && angley > 0 && anglez < 0){ 
-    gpsData.sign = 4;
-    gpsData.ax = floor(anglex*100);
-    gpsData.ay = floor(angley*100);
-    gpsData.az = floor(anglez*-100);
-  }
-  else if (anglex > 0 && angley < 0 && anglez > 0){ 
-    gpsData.sign = 5;
-    gpsData.ax = floor(anglex*100);
-    gpsData.ay = floor(angley*-100);
-    gpsData.az = floor(anglez*100);
-  }
-  else if (anglex < 0 && angley > 0 && anglez > 0){ 
-    gpsData.sign = 6;
-    gpsData.ax = floor(anglex*-100);
-    gpsData.ay = floor(angley*100);
-    gpsData.az = floor(anglez*100);
-  }
-  else{
-    gpsData.sign = 7;
-    gpsData.ax = floor(anglex*100);
-    gpsData.ay = floor(angley*100);
-    gpsData.az = floor(anglez*100);
-  }
-
+  gpsData.gx = gyrox;
+  gpsData.gy = gyroy;
+  gpsData.gz = gyroz;
+  gpsData.ax = anglex;
+  gpsData.ay = angley;
+  gpsData.az = anglez;
   gpsData.thrust = ref_throttle;
   gpsData.flm = fl;
   gpsData.frm = fr;

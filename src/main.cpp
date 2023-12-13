@@ -62,10 +62,14 @@ void SerialDataPrint()
     Serial.print("\t");
     Serial.print(ref_throttle);
     Serial.print("\tz");
-    Serial.print("fl: ");   Serial.print(fl);    Serial.print("\t");
-    Serial.print("fr: ");   Serial.print(fr);    Serial.print("\t");
-    Serial.print("rl: ");   Serial.print(rl);    Serial.print("\t");
-    Serial.print("rr: ");   Serial.print(rr);    Serial.print("\t");
+    Serial.print("fl: ");   Serial.print(fl);    
+    Serial.print("\t");
+    Serial.print("fr: ");   Serial.print(fr);    
+    Serial.print("\t");
+    Serial.print("rl: ");   Serial.print(rl);    
+    Serial.print("\t");
+    Serial.print("rr: ");   Serial.print(rr);    
+    Serial.print("\t");
     Serial.print(gyrox);
     Serial.print("\t");
     Serial.print(gyroy);
