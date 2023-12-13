@@ -11,63 +11,44 @@
 unsigned long time_prev = 0;
 #define SIGNAL_TIMEOUT 1000  // This is signal timeout in milli seconds. We will reset the data if no signal
 int controller_active;
-      
-// ================================================================
-// Most of the variables are declared in the personal library
-// ================================================================
-// Function Declaration
 // ================================================================
 // These function are kept in the main.cpp because it is easier to modify
 void Init_Serial();
 void SerialDataPrint();
 // ================================================================
 // Setup function
-// ================================================================
 void setup(){
   Init_MPU();       // Initialize the MPU
   Init_Serial();    // Initialize the GPS
   Init_PID();
-
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   WiFi.mode(WIFI_STA);
   //Serial.print("ESP Board MAC Address:  ");
   //Serial.println(WiFi.macAddress());
-  // Init ESP-NOW
-  if (esp_now_init() != ESP_OK) 
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
-
-  esp_now_register_recv_cb(OnDataRecv);
-
+  ESPnowInit();
   esp_now_register_recv_cb(OnDataRecv);
 }
 // ================================================================
 // Loop function
-// ================================================================
 void loop(){
-  controller_active = true;
+  controller_active = true; 
+  Get_GPSData();
   Get_MPUangle();    // Get the angle (angle) from the IMU sensor
   Get_accelgyro();
-    unsigned long now = millis();
-  if ( now - lastRecvTime > SIGNAL_TIMEOUT ) 
-  {
-    setInputDefaultValues();
+  unsigned long now = millis();
+  if ( now - lastRecvTime > SIGNAL_TIMEOUT ) {
     // reset reference value to 0 at the start of every loop. This is to prevent
     // motors from spinning when it loses connection.
-    ref_throttle = 0;
-    ref_yaw = 0;
-    ref_pitch = 0;
-    ref_roll = 0;
+    setInputDefaultValues();
     controller_active = false;
   }
   updateMotor();
+  SendData();
   SerialDataPrint(); // Print the data on the serial monitor for debugging
 }
 
 // ================================================================
 // Function Definition
-// ================================================================
 void SerialDataPrint()
 {
   if (micros() - time_prev >= 50000)
@@ -93,16 +74,12 @@ void SerialDataPrint()
     Serial.print("\t");
     Serial.print(millis());
     Serial.print("\t");
-    /*
-    Serial.print(motor_cmd);
+    Serial.print(latitude);
     Serial.print("\t");
-    Serial.print(kp);
+    Serial.print(longtitude);
     Serial.print("\t");
-    Serial.print(ki);
+    Serial.print(altitude);
     Serial.print("\t");
-    Serial.print(kd);
-    Serial.print("\t");
-    Serial.print(anglex_setpoint); */
     Serial.println();   
   }
 }
