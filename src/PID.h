@@ -74,6 +74,9 @@ void Init_PID(){
     PID_gy.SetMode(AUTOMATIC);
     PID_gy.SetOutputLimits(-127, 127);
     PID_gy.SetSampleTime(SAMPLE_TIME);
+    PID_az.SetMode(AUTOMATIC);
+    PID_az.SetOutputLimits(-127, 127);
+    PID_az.SetSampleTime(SAMPLE_TIME);
     PID_gz.SetMode(AUTOMATIC);
     PID_gz.SetOutputLimits(-127, 127);
     PID_gz.SetSampleTime(SAMPLE_TIME);
@@ -90,8 +93,8 @@ void Compute_PID(){
     PID_gy.SetTunings(kp_pitch_gy, ki_pitch_gy, kd_pitch_gy);
     PID_gy.Compute();
     // Yaw calculation
-    PID_gz.SetTunings(kp_yaw_an, ki_yaw_an, kd_yaw_an);
-    PID_gz.Compute();
+    PID_az.SetTunings(kp_yaw_an, ki_yaw_an, kd_yaw_an);
+    PID_az.Compute();
     PID_gz.SetTunings(kp_yaw_gy, ki_yaw_gy, kd_yaw_gy);
     PID_gz.Compute();
 }
