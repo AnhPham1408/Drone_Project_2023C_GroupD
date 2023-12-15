@@ -11,10 +11,10 @@ Servo FRESC;
 Servo RLESC;
 Servo RRESC;
 
-const int flEscPin = 25;
-const int frEscPin = 26;
-const int rlEscPin = 33;
-const int rrEscPin = 32;
+const int flEscPin = 33;
+const int frEscPin = 32;
+const int rlEscPin = 25;
+const int rrEscPin = 26;
 
 extern double   ref_throttle,
                 ref_yaw,
@@ -25,23 +25,23 @@ int fl,fr,rl,rr;
 
 //PID constants
 //kp_roll = 1.9, kd_roll = 15, ki_roll = 0.015
-double  kp_roll_gy = 0.6,
-        kd_roll_gy = 0.01,
-        ki_roll_gy = 3.5,
-        kp_roll_an = 0.5,
+double  kp_roll_gy = 1,
+        kd_roll_gy = 0,
+        ki_roll_gy = 0,
+        kp_roll_an = 1,
         kd_roll_an = 0,
         ki_roll_an = 0;
         
-double  kp_pitch_gy = 0.6,
-        kd_pitch_gy = 0.01,
-        ki_pitch_gy = 3.5,
-        kp_pitch_an = 0.5,
+double  kp_pitch_gy = 1,
+        kd_pitch_gy = 0,
+        ki_pitch_gy = 0,
+        kp_pitch_an = 1,
         kd_pitch_an = 0,
         ki_pitch_an = 0;
 
-double  kp_yaw_gy = 2,
+double  kp_yaw_gy = 1,
         kd_yaw_gy = 0,
-        ki_yaw_gy = 12,
+        ki_yaw_gy = 0,
         kp_yaw_an = 1,
         kd_yaw_an = 0,
         ki_yaw_an = 0;
@@ -102,10 +102,10 @@ void Compute_PID(){
 void updateMotor(){
     double u_throttle = ref_throttle;
     Compute_PID();
-    fl = u_throttle + u_roll + u_pitch - u_yaw;
-    fr = u_throttle - u_roll + u_pitch + u_yaw;
-    rl = u_throttle + u_roll - u_pitch + u_yaw;
-    rr = u_throttle - u_roll - u_pitch - u_yaw;
+    fl = u_throttle + u_roll - u_pitch + u_yaw;
+    fr = u_throttle - u_roll - u_pitch - u_yaw;
+    rl = u_throttle + u_roll + u_pitch - u_yaw;
+    rr = u_throttle - u_roll + u_pitch + u_yaw;
     //write
     FLESC.writeMicroseconds(fl);
     FRESC.writeMicroseconds(fr);
@@ -119,19 +119,19 @@ void updateMotor(){
       rl = 2000;
     if (rr >= 2000)
       rr = 2000;
-    if (fl <= 1000)
+    if (fl <= 1001)
       fl = 1000;
-    if (fr <= 1000)
+    if (fr <= 1001)
       fr = 1000;
-    if (rl <= 1000)
+    if (rl <= 1001)
       rl = 1000;
-    if (rr <= 1000)
+    if (rr <= 1001)
       rr = 1000;
 
 }
 /*
-fr = - - -
-rr = - + +
-rl = + + -
 fl = + - +
+fr = - - -
+rl = + + -
+rr = - + +
 */

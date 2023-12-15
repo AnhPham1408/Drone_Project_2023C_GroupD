@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <ESP32Servo.h>
 
-#define SIGNAL_TIMEOUT 1000  // This is signal timeout in milli seconds. We will reset the data if no signal
 #define MAX_SIGNAL 2000 // Parameter required for the ESC definition
 #define MIN_SIGNAL 1000 // Parameter required for the ESC definition
 
@@ -57,37 +56,6 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   // Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Message sent" : "Message failed");
 }
 
-void ESPnowInit(){
-      // Init ESP-NOW
-  if (esp_now_init() != ESP_OK) 
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
-  else
-  {
-    Serial.println("Succes: Initialized ESP-NOW");
-  }
-
-  esp_now_register_send_cb(OnDataSent);
-  
-  // Register peer
-  memcpy(peerInfo.peer_addr, receiverMacAddress, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK)
-  {
-    Serial.println("Failed to add peer");
-    return;
-  }
-  else
-  {
-    Serial.println("Succes: Added peer");
-  } 
-}
-
 //Assign default input received values
 void setInputDefaultValues()
 {
@@ -127,6 +95,39 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len)
   readJoystick();
       
   lastRecvTime = millis(); 
+}
+
+void ESPnowInit(){
+      // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) 
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+  else
+  {
+    Serial.println("Succes: Initialized ESP-NOW");
+  }
+
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register peer
+  memcpy(peerInfo.peer_addr, receiverMacAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+  
+  // Add peer        
+  if (esp_now_add_peer(&peerInfo) != ESP_OK)
+  {
+    Serial.println("Failed to add peer");
+    return;
+  }
+  else
+  {
+    Serial.println("Succes: Added peer");
+  } 
+  
+  esp_now_register_recv_cb(OnDataRecv);
 }
 
 void SendData(){
