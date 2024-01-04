@@ -25,24 +25,24 @@ int fl,fr,rl,rr;
 
 //PID constants
 //kp_roll = 1.9, kd_roll = 15, ki_roll = 0.015
-double  kp_roll_gy = 1,
-        kd_roll_gy = 0,
-        ki_roll_gy = 0,
-        kp_roll_an = 1,
+double  kp_roll_gy = 6,
+        kd_roll_gy = 0.1,  //0.2                                                                                  
+        ki_roll_gy = 0.1,   //0.015
+        kp_roll_an = 1.3,
         kd_roll_an = 0,
         ki_roll_an = 0;
         
-double  kp_pitch_gy = 1,
-        kd_pitch_gy = 0,
-        ki_pitch_gy = 0,
+double  kp_pitch_gy = 7,
+        kd_pitch_gy = 0.1, //0.2
+        ki_pitch_gy = 0.1,
         kp_pitch_an = 1,
         kd_pitch_an = 0,
         ki_pitch_an = 0;
 
-double  kp_yaw_gy = 1,
+double  kp_yaw_gy = 8,
         kd_yaw_gy = 0,
         ki_yaw_gy = 0,
-        kp_yaw_an = 1,
+        kp_yaw_an = 0,
         kd_yaw_an = 0,
         ki_yaw_an = 0;
 
@@ -92,7 +92,7 @@ void Compute_PID(){
     PID_ay.Compute();
     PID_gy.SetTunings(kp_pitch_gy, ki_pitch_gy, kd_pitch_gy);
     PID_gy.Compute();
-    // Yaw calculation
+    //Yaw calculation
     PID_az.SetTunings(kp_yaw_an, ki_yaw_an, kd_yaw_an);
     PID_az.Compute();
     PID_gz.SetTunings(kp_yaw_gy, ki_yaw_gy, kd_yaw_gy);
@@ -102,15 +102,11 @@ void Compute_PID(){
 void updateMotor(){
     double u_throttle = ref_throttle;
     Compute_PID();
-    fl = u_throttle + u_roll - u_pitch + u_yaw;
-    fr = u_throttle - u_roll - u_pitch - u_yaw;
-    rl = u_throttle + u_roll + u_pitch - u_yaw;
-    rr = u_throttle - u_roll + u_pitch + u_yaw;
-    //write
-    FLESC.writeMicroseconds(fl);
-    FRESC.writeMicroseconds(fr);
-    RLESC.writeMicroseconds(rl);
-    RRESC.writeMicroseconds(rr);
+    fl = u_throttle + u_roll - u_pitch - u_yaw;
+    fr = u_throttle - u_roll - u_pitch + u_yaw;
+    rl = u_throttle + u_roll + u_pitch + u_yaw;
+    rr = u_throttle - u_roll + u_pitch - u_yaw;
+    
     if (fl >= 2000)
       fl = 2000;
     if (fr >= 2000)
@@ -119,15 +115,24 @@ void updateMotor(){
       rl = 2000;
     if (rr >= 2000)
       rr = 2000;
-    if (fl <= 1001)
+    if(ref_throttle <= 1100){
       fl = 1000;
-    if (fr <= 1001)
       fr = 1000;
-    if (rl <= 1001)
       rl = 1000;
-    if (rr <= 1001)
       rr = 1000;
+    }
 
+    if(abs(anglex) >= 50 || abs(angley) >= 50) {
+      fl = 1000;
+      fr = 1000;
+      rl = 1000;
+      rr = 1000;
+    }
+    //write
+    FLESC.writeMicroseconds(fl);
+    FRESC.writeMicroseconds(fr);
+    RLESC.writeMicroseconds(rl);
+    RRESC.writeMicroseconds(rr);
 }
 /*
 fl = + - +
