@@ -25,24 +25,24 @@ int fl,fr,rl,rr;
 
 //PID constants
 //kp_roll = 1.9, kd_roll = 15, ki_roll = 0.015
-double  kp_roll_gy = 6,
-        kd_roll_gy = 0.1,  //0.2                                                                                  
-        ki_roll_gy = 0.1,   //0.015
-        kp_roll_an = 1.3,
-        kd_roll_an = 0,
+double  kp_roll_gy = 5,
+        kd_roll_gy = 0.031,                                                                                  
+        ki_roll_gy = 0.22,  
+        kp_roll_an = 0.85,
+        kd_roll_an = 0.031,
         ki_roll_an = 0;
         
-double  kp_pitch_gy = 7,
-        kd_pitch_gy = 0.1, //0.2
-        ki_pitch_gy = 0.1,
-        kp_pitch_an = 1,
-        kd_pitch_an = 0,
+double  kp_pitch_gy = 5,
+        kd_pitch_gy = 0.031, 
+        ki_pitch_gy = 0.22,
+        kp_pitch_an = 0.85,
+        kd_pitch_an = 0.031,
         ki_pitch_an = 0;
 
-double  kp_yaw_gy = 8,
+double  kp_yaw_gy = 3,
         kd_yaw_gy = 0,
         ki_yaw_gy = 0,
-        kp_yaw_an = 0,
+        kp_yaw_an = 3,
         kd_yaw_an = 0,
         ki_yaw_an = 0;
 

@@ -7,6 +7,7 @@
 
 uint8_t receiverMacAddress[] = {0x48,0xE7,0x29,0x9F,0xDE,0x3C}; //48:E7:29:9F:DE:3C
 unsigned long lastRecvTime = 0;
+double base_yaw = anglez;
 
 double  ref_throttle,
         ref_yaw,
@@ -72,13 +73,13 @@ void setInputDefaultValues()
 void readJoystick() {
   ref_throttle = map(receiverData.potValue, 0, 180, 1000, 1900);
   if (receiverData.switch1Value == 0 && receiverData.switch2Value == 1){
-    ref_yaw = -20;
+    base_yaw = anglez - 5;
   } 
   else if(receiverData.switch2Value == 0 && receiverData.switch1Value == 1){
-    ref_yaw = 20;
+    base_yaw = anglez + 5;
   }
   else if((receiverData.switch2Value == 1 && receiverData.switch1Value == 1)||(receiverData.switch2Value == 0 && receiverData.switch1Value == 0)){
-  ref_yaw = 0;
+  ref_yaw = base_yaw;
   }
   ref_pitch = map(receiverData.yAxisValue, 0, 254, -10, 10);;
   ref_roll = map(receiverData.xAxisValue, 0, 254, -10, 10);;
