@@ -26,17 +26,17 @@ int fl,fr,rl,rr;
 //PID constants
 //kp_roll = 1.9, kd_roll = 15, ki_roll = 0.015
 double  kp_roll_gy = 5,
-        kd_roll_gy = 0.031,                                                                                  
+        kd_roll_gy = 0.03,                                                                                  
         ki_roll_gy = 0.22,  
-        kp_roll_an = 0.85,
-        kd_roll_an = 0.031,
+        kp_roll_an = 0.85,     
+        kd_roll_an = 0.03,
         ki_roll_an = 0;
         
 double  kp_pitch_gy = 5,
-        kd_pitch_gy = 0.031, 
+        kd_pitch_gy = 0.032, 
         ki_pitch_gy = 0.22,
         kp_pitch_an = 0.85,
-        kd_pitch_an = 0.031,
+        kd_pitch_an = 0.032,
         ki_pitch_an = 0;
 
 double  kp_yaw_gy = 3,
@@ -107,6 +107,7 @@ void updateMotor(){
     rl = u_throttle + u_roll + u_pitch + u_yaw;
     rr = u_throttle - u_roll + u_pitch - u_yaw;
     
+    // Define maximum control signal to prevent motor burn out
     if (fl >= 2000)
       fl = 2000;
     if (fr >= 2000)
@@ -115,13 +116,14 @@ void updateMotor(){
       rl = 2000;
     if (rr >= 2000)
       rr = 2000;
+    // Make 4 motors spin up same time
     if(ref_throttle <= 1100){
       fl = 1000;
       fr = 1000;
       rl = 1000;
       rr = 1000;
     }
-
+    // Motor turn of if roll or pitch angle over 50 degrees
     if(abs(anglex) >= 50 || abs(angley) >= 50) {
       fl = 1000;
       fr = 1000;

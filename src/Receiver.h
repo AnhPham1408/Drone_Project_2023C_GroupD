@@ -44,6 +44,8 @@ struct GPSData{
   int frm;
   int rlm;
   int rrm;
+  int jx;
+  int jy;
 };
 GPSData gpsData;
 
@@ -72,11 +74,21 @@ void setInputDefaultValues()
 
 void readJoystick() {
   ref_throttle = map(receiverData.potValue, 0, 180, 1000, 1900);
-  if (receiverData.switch1Value == 0 && receiverData.switch2Value == 1){
-    base_yaw = anglez - 5;
+  if (receiverData.switch1Value == 0 && receiverData.switch2Value == 1 && anglez > -165){
+    base_yaw = anglez - 15;
+    ref_yaw = base_yaw;
   } 
-  else if(receiverData.switch2Value == 0 && receiverData.switch1Value == 1){
-    base_yaw = anglez + 5;
+  else if (receiverData.switch1Value == 0 && receiverData.switch2Value == 1 && anglez <= -165 && anglez > -179){
+    base_yaw = 179;
+    ref_yaw = base_yaw;
+  }
+  else if(receiverData.switch2Value == 0 && receiverData.switch1Value == 1 && anglez < 165){
+    base_yaw = anglez + 15;
+    ref_yaw = base_yaw;
+  }
+  else if (receiverData.switch2Value == 0 && receiverData.switch1Value == 1 && anglez >= 165 && anglez < 179){
+    base_yaw = -179;
+    ref_yaw = base_yaw;
   }
   else if((receiverData.switch2Value == 1 && receiverData.switch1Value == 1)||(receiverData.switch2Value == 0 && receiverData.switch1Value == 0)){
   ref_yaw = base_yaw;
@@ -149,5 +161,7 @@ void SendData(){
   gpsData.frm = fr;
   gpsData.rlm = rl;
   gpsData.rrm = rr;
+  gpsData.jx = ref_roll;
+  gpsData.jy = ref_pitch;
   esp_now_send(receiverMacAddress, (uint8_t *) &gpsData, sizeof(gpsData));
 }
