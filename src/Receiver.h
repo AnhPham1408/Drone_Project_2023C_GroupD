@@ -46,6 +46,8 @@ struct GPSData{
   int rrm;
   int jx;
   int jy;
+  int yawr;
+  int yawl;
 };
 GPSData gpsData;
 
@@ -163,5 +165,7 @@ void SendData(){
   gpsData.rrm = rr;
   gpsData.jx = ref_roll;
   gpsData.jy = ref_pitch;
+  gpsData.yawr = receiverData.switch2Value;
+  gpsData.yawl = receiverData.switch1Value;
   esp_now_send(receiverMacAddress, (uint8_t *) &gpsData, sizeof(gpsData));
 }
